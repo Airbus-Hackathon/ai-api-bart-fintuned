@@ -4,14 +4,25 @@ from transformers import BartTokenizer, BartForConditionalGeneration, AdamW, Bar
 import uvicorn
 from fastapi import FastAPI, HTTPException
 import pytorch_lightning as pl
+from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI()
 
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 tokenizer = BartTokenizer.from_pretrained('facebook/bart-large', add_prefix_space=True)
 bart_model = BartForConditionalGeneration.from_pretrained("facebook/bart-large")
 
-tldr = pd.read_json('../../../dataset/legal_summarization/tldrlegal_v1.json')
+tldr = pd.read_json('./dataset/airbus_helicopters_train_set.json')
 tldr = tldr.transpose().reset_index()
 tldr.rename(columns = {'original_text':'source', 'reference_summary':'target'}, inplace = True)
 tldr_select = tldr[['source', 'target']]
@@ -23,14 +34,13 @@ bart_model.resize_token_embeddings(len(tokenizer))
 summary_data = SummaryDataModule(tokenizer, tldr_select, batch_size = 1)
 model = LitModel(learning_rate = 2e-5, tokenizer = tokenizer, model = bart_model)
 
-loaded_model = LitModel.load_from_checkpoint("output.ckpt", learning_rate=2e-5, tokenizer=tokenizer, model=bart_model)
-
+loaded_model = LitModel.load_from_checkpoint("./models/output.ckpt",  map_location=torch.device("cpu"), learning_rate=2e-5, tokenizer=tokenizer, model=bart_model)
 
 
 class Text(BaseModel):
     text: str
     
-@app.post("/summarize/")
+@app.post("/summarize")
 async def summarize(request: Text):
     
     try:

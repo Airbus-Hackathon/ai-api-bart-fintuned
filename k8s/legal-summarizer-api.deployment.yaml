@@ -1,0 +1,54 @@
+---
+# legal-summarizer-api-deployment DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legal-summarizer-api-deployment
+  labels:
+    tier: legal-summarizer-api-deployment
+spec:
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: legal-summarizer-api-deployment
+  template:
+    metadata:
+      labels:
+        tier: legal-summarizer-api-deployment
+    spec:
+      containers:
+        - name: legal-summarizer-api-deployment
+          image: antoineleguillou/legal-summarizer:v1.2.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: OMP_NUM_THREADS
+              value: "1"
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 7Gi
+            requests:
+              cpu: 1000m
+              memory: 7Gi
+          ports:
+            - containerPort: 8000
+      restartPolicy: Always
+---
+# legal-summarizer-api-deployment SERVICES
+apiVersion: v1
+kind: Service
+metadata:
+  name: legal-summarizer-api-deployment-service
+spec:
+  selector:
+    tier: legal-summarizer-api-deployment
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http

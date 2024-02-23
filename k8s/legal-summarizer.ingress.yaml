@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: legal-summarizer-api
+  annotations:
+    cert-manager.io/issuer: cert-manager-airbus-hackaton-issuer
+    kubernetes.io/ingress.class: nginx
+spec:
+  tls:
+    - hosts:
+        - api.legal-summarizer.students-epitech.ovh
+      secretName: tls-legal-summarizer-api
+  rules:
+    - host: api.legal-summarizer.students-epitech.ovh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: legal-summarizer-api-deployment-service
+                port:
+                  number: 8000
